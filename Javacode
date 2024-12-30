@@ -1,0 +1,63 @@
+const fs = require('fs');
+
+// Read and parse the JSON file
+fs.readFile('testCase.json', 'utf8', (err, data) => {
+    if (err) {
+        console.error('Error reading the JSON file:', err);
+        return;
+    }
+
+    const testCase = JSON.parse(data);
+
+    // Function to decode a value from a given base
+    function decodeValue(value, base) {
+        return parseInt(value, base);
+    }
+
+    // Function to decode the roots
+    function decodeRoots(testCase) {
+        const decodedRoots = [];
+        for (let key in testCase) {
+            // Skip the 'keys' property and only process the roots
+            if (key !== 'keys') {
+                const base = parseInt(testCase[key].base, 10);  // Convert base to an integer
+                const value = decodeValue(testCase[key].value, base);  // Decode value based on base
+                const x = parseInt(key);  // Get x from the key
+
+                decodedRoots.push({ x, y: value });
+            }
+        }
+        return decodedRoots;
+    }
+
+    // Decode the roots for both test cases
+    const decodedRoots = decodeRoots(testCase);
+
+    console.log('Decoded roots:', decodedRoots);
+
+    // Function to calculate the Lagrange basis polynomial L_i(0)
+    function lagrangeBasis(xi, roots) {
+        let result = 1;
+        for (let i = 0; i < roots.length; i++) {
+            if (roots[i].x !== xi) {
+                result *= (0 - roots[i].x) / (xi - roots[i].x);
+            }
+        }
+        return result;
+    }
+
+    // Function to compute the constant term (c) using Lagrange Interpolation
+    function computeConstantTerm(roots) {
+        let c = 0;
+        for (let i = 0; i < roots.length; i++) {
+            let li = lagrangeBasis(roots[i].x, roots);
+            c += roots[i].y * li;
+        }
+        return c;
+    }
+
+    // Compute the constant term and round it
+    const c = computeConstantTerm(decodedRoots);
+    const roundedC = Math.round(c);  // Round the result to the nearest integer
+    console.log('The constant term (c) is:', roundedC);
+});
